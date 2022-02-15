@@ -30,7 +30,7 @@ class User(KRideModel, AbstractUser):
 
 class Profile(KRideModel):
     user = models.OneToOneField('users.User', on_delete=models.CASCADE)
-    image = models.ImageField('profile picture', upload_to='users/static/users/images', blank=True, null=True)
+    image = models.ImageField('profile picture', upload_to='users/static/users/images', blank=True, null=True, name='')
     biography = models.TextField(max_length=500, blank=True)
     # Stats
     rides_taken = models.PositiveIntegerField(default=0)
