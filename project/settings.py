@@ -54,8 +54,9 @@ INSTALLED_APPS = [
     'taskapp.celery.CeleryAppConfig',
     'users',
     'circles',
-    # Third Party
+    # Third Party Apps
     'django_extensions',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
