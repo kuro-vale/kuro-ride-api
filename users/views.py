@@ -3,12 +3,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 # Serializer
-from users.serializers import UserLoginSerializer, UserModelSerializer
+from users.serializers import UserLoginSerializer, UserModelSerializer, UserSignUpSerializer
 
 
 class UserLoginAPIView(APIView):
     @staticmethod
-    def post(request, *args, **kwargs):
+    def post(request):
         serializer = UserLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, token = serializer.save()
@@ -16,4 +16,14 @@ class UserLoginAPIView(APIView):
             'user': UserModelSerializer(user).data,
             'access_token': token
         }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class SignUpAPIView(APIView):
+    @staticmethod
+    def post(request):
+        serializer = UserSignUpSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        data = UserModelSerializer(user).data,
         return Response(data, status=status.HTTP_201_CREATED)
