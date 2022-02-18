@@ -1,6 +1,13 @@
+# Python
+from datetime import timedelta
+# PyJWT
+import jwt
 # Django
+from django.conf import settings
 from django.contrib.auth import authenticate, password_validation
+from django.core.mail import send_mail
 from django.core.validators import RegexValidator
+from django.utils import timezone
 # Django REST Framework
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
@@ -39,8 +46,28 @@ class UserSignUpSerializer(serializers.Serializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         Profile.objects.create(user=user)
-        authenticate(username=user.email, password=user.password)
+        self.send_verification_email(user)
         return user
+
+    def send_verification_email(self, user):
+        verification_token = self.gen_verification_token(user)
+        send_mail(
+            f'Welcome to KuroRide {user}',
+            f'Your verification token is: {verification_token}',
+            'noreply@kuroride.com',
+            [user.email],
+        )
+
+    @staticmethod
+    def gen_verification_token(user):
+        exp_date = timezone.now() + timedelta(hours=1)
+        payload = {
+            'user': user.username,
+            'exp': int(exp_date.timestamp()),
+            'type': 'email_confirmation'
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        return token
 
 
 class UserLoginSerializer(serializers.Serializer):
@@ -51,9 +78,33 @@ class UserLoginSerializer(serializers.Serializer):
         user = authenticate(username=data['email'], password=data['password'])
         if not user:
             raise serializers.ValidationError('Invalid credentials')
+        if not user.is_verified:
+            raise serializers.ValidationError('Account is not active yet')
         self.context['user'] = user
         return data
 
     def create(self, validated_data):
         token, created = Token.objects.get_or_create(user=self.context['user'])
         return self.context['user'], token.key
+
+
+class AccountVerificationSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+    def validate(self, data):
+        try:
+            payload = jwt.decode(data.get('token'), settings.SECRET_KEY, algorithms='HS256')
+        except jwt.ExpiredSignatureError:
+            raise serializers.ValidationError('Verification link has expired')
+        except jwt.PyJWTError:
+            raise serializers.ValidationError('Invalid Token')
+        if payload['type'] != 'email_confirmation':
+            raise serializers.ValidationError('Invalid Token')
+        self.context['payload'] = payload
+        return data
+
+    def save(self):
+        payload = self.context['payload']
+        user = User.objects.get(username=payload['user'])
+        user.is_verified = True
+        user.save()
