@@ -7,8 +7,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 # App
 from circles.models import Circle, Membership
-from circles.permissions import IsCircleAdmin
+from circles.permissions import IsCircleAdmin, IsActiveCircleMember
 from circles.serializers import CircleSerializer, MembershipModelSerializer
+from users.models import User
 
 
 # Circle views
@@ -61,8 +62,30 @@ def delete_circle(request, slug_name):
 # Membership Views
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated, IsActiveCircleMember])
 def get_circle_members(request, slug_name):
     circle = get_object_or_404(Circle, slug_name=slug_name)
     memberships = Membership.objects.filter(circle=circle, is_active=True)
     serializer = MembershipModelSerializer(memberships, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsActiveCircleMember])
+def get_circle_member(request, slug_name, username):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
+    user = get_object_or_404(User, username=username)
+    membership = get_object_or_404(Membership, user=user, circle=circle)
+    serializer = MembershipModelSerializer(membership)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsCircleAdmin])
+def kick_circle_member(request, slug_name, username):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
+    user = get_object_or_404(User, username=username)
+    membership = get_object_or_404(Membership, user=user, circle=circle)
+    membership.is_active = False
+    membership.save()
+    return Response(status=status.HTTP_200_OK)
