@@ -69,6 +69,16 @@ class UserSignUpSerializer(serializers.Serializer):
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         return token
 
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get('email', instance.email)
+        instance.username = validated_data.get('username', instance.username)
+        instance.password = validated_data.get('password', instance.password)
+        instance.phone_number = validated_data.get('phone_number', instance.phone_number)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.save()
+        return instance
+
 
 class UserLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()

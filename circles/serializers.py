@@ -6,7 +6,6 @@ from circles.models import Circle
 
 
 class CircleSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=140)
     slug_name = serializers.SlugField(validators=[UniqueValidator(queryset=Circle.objects.all())], max_length=40)
     about = serializers.CharField(max_length=255, required=False)

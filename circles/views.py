@@ -20,8 +20,8 @@ def list_circles(request):
 
 
 @api_view(['GET'])
-def get_circle(request, circle_id):
-    circle = get_object_or_404(Circle, pk=circle_id)
+def get_circle(request, slug_name):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
     serializer = CircleSerializer(circle)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -41,8 +41,8 @@ def create_circle(request):
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated, IsCircleAdmin])
-def update_circle(request, circle_id):
-    circle = get_object_or_404(Circle, pk=circle_id)
+def update_circle(request, slug_name):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
     serializer = CircleSerializer(instance=circle, data=request.data)
     serializer.is_valid(raise_exception=True)
     serializer.save()
@@ -51,7 +51,7 @@ def update_circle(request, circle_id):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated, IsCircleAdmin])
-def delete_circle(request, circle_id):
-    circle = get_object_or_404(Circle, pk=circle_id)
+def delete_circle(request, slug_name):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
     circle.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
