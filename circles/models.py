@@ -1,6 +1,7 @@
 # Django
 from django.db import models
-# Utils
+# App
+from circles.managers import InvitationManager
 from users.models import User, Profile
 from utils.models import KRideModel
 
@@ -42,3 +43,17 @@ class Membership(KRideModel):
 
     def __str__(self):
         return f'@{self.user.username} at #{self.circle.slug_name}'
+
+
+class Invitation(KRideModel):
+    code = models.CharField(max_length=50, unique=True)
+    issued_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='issued_by')
+    used_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    circle = models.ForeignKey(Circle, on_delete=models.CASCADE)
+    used = models.BooleanField(default=False)
+    used_at = models.DateTimeField(blank=True, null=True)
+
+    objects = InvitationManager()
+
+    def __str__(self):
+        return f'{self.circle.slug_name} invitation code: {self.code}'
