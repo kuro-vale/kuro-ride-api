@@ -1,10 +1,15 @@
+# Django
+from django.shortcuts import get_object_or_404
 # Django REST Framework
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-# Serializer
+# App
+from circles.models import Circle
+from circles.serializers import CircleSerializer
+from users.models import User
 from users.serializers import UserLoginSerializer, UserModelSerializer, UserSignUpSerializer, \
     AccountVerificationSerializer
 
@@ -62,3 +67,15 @@ def update_user(request):
 def delete_user(request):
     request.user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+def get_user(request, username):
+    user = get_object_or_404(User, username=username)
+    circles = Circle.objects.filter(members=user)
+    serializer = UserModelSerializer(user)
+    data = {
+        'user': serializer.data,
+        'circles': CircleSerializer(circles, many=True).data
+    }
+    return Response(data, status=status.HTTP_200_OK)
