@@ -4,7 +4,7 @@ from datetime import timedelta
 import jwt
 # Django
 from django.conf import settings
-from django.contrib.auth import authenticate, password_validation
+from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.core.validators import RegexValidator
 from django.utils import timezone
@@ -28,6 +28,20 @@ class UserModelSerializer(serializers.ModelSerializer):
         )
 
 
+class ProfileSerializer(serializers.Serializer):
+    image = serializers.ImageField(required=False)
+    biography = serializers.CharField(max_length=500)
+    rides_taken = serializers.IntegerField(default=0, read_only=True)
+    rides_offered = serializers.IntegerField(default=0, read_only=True)
+    reputation = serializers.FloatField(default=3.0, read_only=True)
+
+    def update(self, instance, validated_data):
+        instance.image = validated_data.get('image', instance.image)
+        instance.biography = validated_data.get('biography', instance.biography)
+        instance.save()
+        return instance
+
+
 class UserSignUpSerializer(serializers.Serializer):
     email = serializers.EmailField(validators=[UniqueValidator(queryset=User.objects.all())])
     username = serializers.CharField(min_length=2, max_length=20,
@@ -37,11 +51,6 @@ class UserSignUpSerializer(serializers.Serializer):
     phone_number = serializers.CharField(validators=[phone_regex], required=False)
     first_name = serializers.CharField(min_length=2, required=False)
     last_name = serializers.CharField(min_length=2, required=False)
-
-    def validate(self, data):
-        passwd = data['password']
-        password_validation.validate_password(passwd)
-        return data
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)

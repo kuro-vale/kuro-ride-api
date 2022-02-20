@@ -11,7 +11,7 @@ from circles.models import Circle
 from circles.serializers import CircleSerializer
 from users.models import User
 from users.serializers import UserLoginSerializer, UserModelSerializer, UserSignUpSerializer, \
-    AccountVerificationSerializer
+    AccountVerificationSerializer, ProfileSerializer
 
 
 class UserLoginAPIView(APIView):
@@ -53,10 +53,11 @@ def logout(request):
     return Response(status=status.HTTP_200_OK)
 
 
-@api_view(['PUT'])
+@api_view(['PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def update_user(request):
-    serializer = UserSignUpSerializer(instance=request.user, data=request.data)
+    partial = request.method == 'PATCH'
+    serializer = UserSignUpSerializer(instance=request.user, data=request.data, partial=partial)
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -73,9 +74,23 @@ def delete_user(request):
 def get_user(request, username):
     user = get_object_or_404(User, username=username)
     circles = Circle.objects.filter(members=user)
+    profile = user.profile
     serializer = UserModelSerializer(user)
     data = {
         'user': serializer.data,
+        'profile': ProfileSerializer(profile).data,
         'circles': CircleSerializer(circles, many=True).data
     }
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    profile = request.user.profile
+    partial = request.method == 'PATCH'
+    serializer = ProfileSerializer(profile, data=request.data, partial=partial)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
