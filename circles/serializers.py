@@ -34,5 +34,7 @@ class CircleSerializer(serializers.Serializer):
         instance.rides_taken = validated_data.get('rides_taken', instance.rides_taken)
         instance.rides_offered = validated_data.get('rides_offered', instance.rides_offered)
         instance.members_limit = validated_data.get('members_limit', instance.members_limit)
+        instance.is_limited = validated_data.get('is_limited', instance.is_limited)
+        instance.is_public = validated_data.get('is_public', instance.is_public)
         instance.save()
         return instance

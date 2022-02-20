@@ -7,7 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 # App Models
 from circles.models import Circle, Membership
-# App Serializers
+# App
+from circles.permissions import IsCircleAdmin
 from circles.serializers import CircleSerializer
 
 
@@ -26,7 +27,7 @@ def get_circle(request, circle_id):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsCircleAdmin])
 def create_circle(request):
     user = request.user
     profile = user.profile
@@ -39,7 +40,7 @@ def create_circle(request):
 
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsCircleAdmin])
 def update_circle(request, circle_id):
     circle = get_object_or_404(Circle, pk=circle_id)
     serializer = CircleSerializer(instance=circle, data=request.data)
@@ -49,7 +50,7 @@ def update_circle(request, circle_id):
 
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsCircleAdmin])
 def delete_circle(request, circle_id):
     circle = get_object_or_404(Circle, pk=circle_id)
     circle.delete()
