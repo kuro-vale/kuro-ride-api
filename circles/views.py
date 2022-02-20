@@ -5,12 +5,13 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-# App Models
-from circles.models import Circle, Membership
 # App
+from circles.models import Circle, Membership
 from circles.permissions import IsCircleAdmin
-from circles.serializers import CircleSerializer
+from circles.serializers import CircleSerializer, MembershipModelSerializer
 
+
+# Circle views
 
 @api_view(['GET'])
 def list_circles(request):
@@ -55,3 +56,13 @@ def delete_circle(request, slug_name):
     circle = get_object_or_404(Circle, slug_name=slug_name)
     circle.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# Membership Views
+
+@api_view(['GET'])
+def get_circle_members(request, slug_name):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
+    memberships = Membership.objects.filter(circle=circle, is_active=True)
+    serializer = MembershipModelSerializer(memberships, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

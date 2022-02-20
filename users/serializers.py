@@ -16,18 +16,6 @@ from rest_framework.validators import UniqueValidator
 from users.models import User, Profile
 
 
-class UserModelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = (
-            'username',
-            'first_name',
-            'last_name',
-            'email',
-            'phone_number'
-        )
-
-
 class ProfileSerializer(serializers.Serializer):
     image = serializers.ImageField(required=False)
     biography = serializers.CharField(max_length=500)
@@ -40,6 +28,21 @@ class ProfileSerializer(serializers.Serializer):
         instance.biography = validated_data.get('biography', instance.biography)
         instance.save()
         return instance
+
+
+class UserModelSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'phone_number',
+            'profile'
+        )
 
 
 class UserSignUpSerializer(serializers.Serializer):

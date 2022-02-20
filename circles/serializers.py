@@ -1,8 +1,9 @@
 # Django REST Framework
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-# Models
-from circles.models import Circle
+# App
+from circles.models import Circle, Membership
+from users.serializers import UserModelSerializer
 
 
 class CircleSerializer(serializers.Serializer):
@@ -37,3 +38,16 @@ class CircleSerializer(serializers.Serializer):
         instance.is_public = validated_data.get('is_public', instance.is_public)
         instance.save()
         return instance
+
+
+class MembershipModelSerializer(serializers.ModelSerializer):
+    user = UserModelSerializer(read_only=True)
+    invited_by = serializers.StringRelatedField(read_only=True)
+    joined_at = serializers.DateTimeField(source='created', read_only=True)
+
+    class Meta:
+        model = Membership
+        fields = ('user', 'is_admin', 'is_active',
+                  'invited_by', 'rides_taken', 'rides_offered',
+                  'joined_at')
+        read_only_fields = ('rides_taken', 'rides_offered')
