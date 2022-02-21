@@ -4,4 +4,5 @@ from django.urls import path
 from rides import views
 
 urlpatterns = [
+    path('<str:slug_name>/create/', views.create_ride, name='create_ride'),
 ]
