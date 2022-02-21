@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 # App
-from circles.models import Circle, Membership
+from circles.models import Circle, Membership, Invitation
 from circles.permissions import IsCircleAdmin, IsActiveCircleMember
 from circles.serializers import CircleSerializer, MembershipModelSerializer
 from users.models import User
@@ -89,3 +89,26 @@ def kick_circle_member(request, slug_name, username):
     membership.is_active = False
     membership.save()
     return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsActiveCircleMember])
+def get_invitations(request, slug_name):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
+    invited_members = Membership.objects.filter(circle=circle, invited_by=request.user)
+    unused_invitations = Invitation.objects.filter(circle=circle,
+                                                   issued_by=request.user, used=False).values_list('code', flat=True)
+    data = {
+        'unused_invitations': unused_invitations,
+        'invited_members': MembershipModelSerializer(invited_members, many=True).data
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsActiveCircleMember])
+def create_invitation(request, slug_name):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
+    invitation = Invitation.objects.create(issued_by=request.user, circle=circle)
+    data = {f'Circle {circle.slug_name}': invitation.code}
+    return Response(data, status=status.HTTP_201_CREATED)

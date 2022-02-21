@@ -12,4 +12,6 @@ urlpatterns = [
     path('circle/<str:slug_name>/members/', views.get_circle_members, name='get_circle_members'),
     path('circle/<str:slug_name>/<str:username>/', views.get_circle_member, name='get_circle_member'),
     path('circle/<str:slug_name>/<str:username>/kick/', views.kick_circle_member, name='kick_circle_member'),
+    path('invitations/<str:slug_name>/', views.get_invitations, name='get_invitations'),
+    path('invitations/<str:slug_name>/create/', views.create_invitation, name='create_invitation'),
 ]
