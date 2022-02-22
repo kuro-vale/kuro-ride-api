@@ -7,11 +7,12 @@ from rest_framework import serializers
 # APP
 from circles.models import Membership
 from rides.models import Ride
+from users.serializers import UserModelSerializer
 
 
 class RideModelSerializer(serializers.ModelSerializer):
     offered_by = serializers.CharField()
-    passengers = [serializers.CharField()]
+    passengers = UserModelSerializer(read_only=True, many=True)
 
     class Meta:
         model = Ride
@@ -65,4 +66,40 @@ class CreateRideSerializer(serializers.ModelSerializer):
         profile = self.context['offered_by'].profile
         profile.rides_offered += 1
         profile.save()
+        return ride
+
+
+class JoinRideSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Ride
+        fields = '__all__'
+
+    def validate(self, attrs):
+        ride = self.context['ride']
+        if ride.offered_by == self.context['user']:
+            raise serializers.ValidationError('You are the owner of this ride')
+        if ride.departure_date <= timezone.now():
+            raise serializers.ValidationError("You can't join this ride now")
+        if ride.available_seats < 1:
+            raise serializers.ValidationError('Ride is already full')
+        if ride.passengers.filter(pk=self.context['user'].pk).exists():
+            raise serializers.ValidationError('passenger is already in this trip')
+        return attrs
+
+    def update(self, instance, validated_data):
+        ride = self.context['ride']
+        user = self.context['user']
+        ride.passengers.add(user)
+        ride.available_seats -= 1
+        ride.save()
+        profile = user.profile
+        profile.rides_taken += 1
+        profile.save()
+        membership = self.context['membership']
+        membership.rides_taken += 1
+        membership.save()
+        circle = self.context['circle']
+        circle.rides_taken += 1
+        circle.save()
         return ride

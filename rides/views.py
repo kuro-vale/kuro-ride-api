@@ -9,11 +9,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 # App
-from circles.models import Circle
+from circles.models import Circle, Membership
 from circles.permissions import IsActiveCircleMember
 from rides.models import Ride
 from rides.permissions import IsRideOwner
-from rides.serializers import CreateRideSerializer, RideModelSerializer
+from rides.serializers import CreateRideSerializer, RideModelSerializer, JoinRideSerializer
 
 
 @api_view(['POST'])
@@ -45,3 +45,18 @@ def update_ride(request, ride_id):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsActiveCircleMember])
+def join_ride(request, slug_name, ride_id):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
+    membership = get_object_or_404(Membership, circle=circle, user=request.user)
+    ride = get_object_or_404(Ride, pk=ride_id)
+    serializer = JoinRideSerializer(ride, data=request.data,
+                                    context={'ride': ride, 'user': request.user, 'circle': circle, 'membership': membership},
+                                    partial=True)
+    serializer.is_valid(raise_exception=True)
+    ride = serializer.save()
+    data = RideModelSerializer(ride).data
+    return Response(data, status=status.HTTP_200_OK)
