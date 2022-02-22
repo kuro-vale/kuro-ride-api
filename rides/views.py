@@ -60,3 +60,13 @@ def join_ride(request, slug_name, ride_id):
     ride = serializer.save()
     data = RideModelSerializer(ride).data
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsRideOwner])
+def end_ride(request, ride_id):
+    ride = get_object_or_404(Ride, pk=ride_id, is_active=True)
+    ride.is_active = False
+    ride.save()
+    data = RideModelSerializer(ride).data
+    return Response(data, status=status.HTTP_200_OK)
