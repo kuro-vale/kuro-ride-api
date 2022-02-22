@@ -124,7 +124,7 @@ class CreateRideRatingSerializer(serializers.ModelSerializer):
         rating = Rating.objects.filter(circle=self.context['circle'],
                                        ride=ride, rating_user=user)
         if rating.exists():
-            raise serializers.ValidationError('Rating have already beem emitted')
+            raise serializers.ValidationError('Rating have already been emitted')
         return attrs
 
     def create(self, validated_data):
