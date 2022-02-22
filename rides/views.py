@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from circles.models import Circle
 from circles.permissions import IsActiveCircleMember
 from rides.models import Ride
+from rides.permissions import IsRideOwner
 from rides.serializers import CreateRideSerializer, RideModelSerializer
 
 
@@ -32,4 +33,15 @@ def get_rides(request, slug_name):
     offset = timezone.now() + timedelta(minutes=10)
     rides = Ride.objects.filter(offered_in=circle, departure_date__gte=offset, is_active=True)
     serializer = RideModelSerializer(rides, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated, IsRideOwner])
+def update_ride(request, ride_id):
+    ride = get_object_or_404(Ride, pk=ride_id)
+    partial = request.method == 'PATCH'
+    serializer = RideModelSerializer(ride, data=request.data, partial=partial)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
     return Response(serializer.data, status=status.HTTP_200_OK)

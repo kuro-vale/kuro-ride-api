@@ -11,11 +11,25 @@ from rides.models import Ride
 
 class RideModelSerializer(serializers.ModelSerializer):
     offered_by = serializers.CharField()
+    passengers = [serializers.CharField()]
 
     class Meta:
         model = Ride
-        exclude = ('offered_in', 'id', 'created', 'modified')
+        exclude = ('offered_in', 'created', 'modified')
         read_only_fields = ('offered_in', 'offered_by', 'rating')
+
+    def update(self, instance, validated_data):
+        now = timezone.now()
+        if instance.departure_date <= now:
+            raise serializers.ValidationError('Ongoing rides cannot be modified')
+        instance.available_seats = validated_data.get('available_seats', instance.available_seats)
+        instance.comments = validated_data.get('comments', instance.comments)
+        instance.departure_location = validated_data.get('departure_location', instance.departure_location)
+        instance.departure_date = validated_data.get('departure_date', instance.departure_date)
+        instance.arrival_location = validated_data.get('available_seats', instance.arrival_location)
+        instance.arrival_date = validated_data.get('arrival_date', instance.arrival_date)
+        instance.save()
+        return instance
 
 
 class CreateRideSerializer(serializers.ModelSerializer):
@@ -23,7 +37,7 @@ class CreateRideSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ride
-        exclude = ('offered_in', 'passengers', 'rating', 'is_active', 'offered_by', 'id', 'created', 'modified')
+        exclude = ('offered_in', 'passengers', 'rating', 'is_active', 'offered_by', 'created', 'modified')
 
     def validate(self, attrs):
         # Validate departure date
