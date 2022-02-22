@@ -1,12 +1,13 @@
 # Python
 from datetime import timedelta
 # Django
+from django.db.models import Avg
 from django.utils import timezone
 # Django REST Framework
 from rest_framework import serializers
 # APP
 from circles.models import Membership
-from rides.models import Ride
+from rides.models import Ride, Rating
 from users.serializers import UserModelSerializer
 
 
@@ -102,4 +103,42 @@ class JoinRideSerializer(serializers.ModelSerializer):
         circle = self.context['circle']
         circle.rides_taken += 1
         circle.save()
+        return ride
+
+
+class CreateRideRatingSerializer(serializers.ModelSerializer):
+    rating = serializers.FloatField(min_value=0, max_value=5)
+    comments = serializers.CharField(required=False)
+
+    class Meta:
+        model = Rating
+        fields = ('rating', 'comments')
+
+    def validate(self, attrs):
+        user = self.context['user']
+        ride = self.context['ride']
+        if ride.offered_by == user:
+            raise serializers.ValidationError('You are the owner of this ride')
+        if not ride.passengers.filter(pk=user.pk).exists():
+            raise serializers.ValidationError('User is not a passenger')
+        rating = Rating.objects.filter(circle=self.context['circle'],
+                                       ride=ride, rating_user=user)
+        if rating.exists():
+            raise serializers.ValidationError('Rating have already beem emitted')
+        return attrs
+
+    def create(self, validated_data):
+        circle = self.context['circle']
+        ride = self.context['ride']
+        rating_user = self.context['user']
+        offered_by = self.context['ride'].offered_by
+        Rating.objects.create(circle=circle, ride=ride, rating_user=rating_user,
+                              rated_user=offered_by, **validated_data)
+        ride_avg = round(Rating.objects.filter(circle=circle,
+                                               ride=ride).aggregate(Avg('rating'))['rating__avg'], 1)
+        ride.rating = ride_avg
+        ride.save()
+        user_av = round(Rating.objects.filter(rated_user=offered_by).aggregate(Avg('rating'))['rating__avg'], 1)
+        offered_by.profile.reputation = user_av
+        offered_by.profile.save()
         return ride

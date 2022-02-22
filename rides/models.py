@@ -21,3 +21,15 @@ class Ride(KRideModel):
 
     def __str__(self):
         return f'{self.departure_location} to {self.arrival_location} | {self.departure_date} - {self.arrival_date}'
+
+
+class Rating(KRideModel):
+    ride = models.ForeignKey(Ride, on_delete=models.CASCADE, related_name='rated_ride')
+    circle = models.ForeignKey(Circle, on_delete=models.CASCADE)
+    rating_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='rating_user')
+    rated_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='rated_user')
+    comments = models.TextField(blank=True)
+    rating = models.FloatField(default=3.0)
+
+    def __str__(self):
+        return f'Ride: {self.ride.id} Rating: {self.rating}'

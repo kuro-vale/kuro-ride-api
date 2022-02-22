@@ -13,7 +13,7 @@ from circles.models import Circle, Membership
 from circles.permissions import IsActiveCircleMember
 from rides.models import Ride
 from rides.permissions import IsRideOwner
-from rides.serializers import CreateRideSerializer, RideModelSerializer, JoinRideSerializer
+from rides.serializers import CreateRideSerializer, RideModelSerializer, JoinRideSerializer, CreateRideRatingSerializer
 
 
 @api_view(['POST'])
@@ -70,3 +70,18 @@ def end_ride(request, ride_id):
     ride.save()
     data = RideModelSerializer(ride).data
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsActiveCircleMember])
+def rate_ride(request, slug_name, ride_id):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
+    ride = get_object_or_404(Ride, pk=ride_id)
+    serializer = CreateRideRatingSerializer(data=request.data,
+                                            context={'ride': ride,
+                                                     'user': request.user,
+                                                     'circle': circle})
+    serializer.is_valid(raise_exception=True)
+    ride = serializer.save()
+    data = RideModelSerializer(ride).data
+    return Response(data, status=status.HTTP_201_CREATED)
