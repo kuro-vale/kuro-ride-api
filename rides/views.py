@@ -1,5 +1,8 @@
+# Python
+from datetime import timedelta
 # Django
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 # Django REST Framework
 from rest_framework import status
 from rest_framework.response import Response
@@ -8,7 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 # App
 from circles.models import Circle
 from circles.permissions import IsActiveCircleMember
-from rides.serializers import CreateRideSerializer
+from rides.models import Ride
+from rides.serializers import CreateRideSerializer, RideModelSerializer
 
 
 @api_view(['POST'])
@@ -19,3 +23,13 @@ def create_ride(request, slug_name):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsActiveCircleMember])
+def get_rides(request, slug_name):
+    circle = get_object_or_404(Circle, slug_name=slug_name)
+    offset = timezone.now() + timedelta(minutes=10)
+    rides = Ride.objects.filter(offered_in=circle, departure_date__gte=offset, is_active=True)
+    serializer = RideModelSerializer(rides, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

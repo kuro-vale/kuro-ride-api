@@ -9,12 +9,21 @@ from circles.models import Membership
 from rides.models import Ride
 
 
+class RideModelSerializer(serializers.ModelSerializer):
+    offered_by = serializers.CharField()
+
+    class Meta:
+        model = Ride
+        exclude = ('offered_in', 'id', 'created', 'modified')
+        read_only_fields = ('offered_in', 'offered_by', 'rating')
+
+
 class CreateRideSerializer(serializers.ModelSerializer):
     available_seats = serializers.IntegerField(min_value=1, max_value=15)
 
     class Meta:
         model = Ride
-        exclude = ('offered_in', 'passengers', 'rating', 'is_active', 'offered_by', 'id')
+        exclude = ('offered_in', 'passengers', 'rating', 'is_active', 'offered_by', 'id', 'created', 'modified')
 
     def validate(self, attrs):
         # Validate departure date
