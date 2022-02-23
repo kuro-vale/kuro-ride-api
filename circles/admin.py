@@ -10,3 +10,11 @@ class CircleAdmin(admin.ModelAdmin):
                     'verified', 'is_limited', 'members_limit')
     search_fields = ('slug_name', 'name')
     list_filter = ('is_public', 'verified', 'is_limited')
+
+    actions = ['verify', 'deverify']
+
+    def verify(self, request, queryset):
+        queryset.update(verified=True)
+
+    def deverify(self, request, queryset):
+        queryset.update(verified=False)
